@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nginx Log Analyzer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+      .modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0,0,0,0.5);
+      }
+      .modal.active {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+      .sortable:hover {
+          background-color: #f3f4f6;
+          cursor: pointer;
+      }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+<div class="container mx-auto px-4 py-8">
+  <div class="mb-8">
+    <div class="flex items-center justify-between flex-wrap gap-4">
+      <div>
+        <h1 class="text-4xl font-bold text-gray-800 mb-2">
+          <i class="fas fa-chart-line text-blue-600"></i> Nginx Log Analyzer
+        </h1>
+        <p class="text-gray-600">Upload and analyze your nginx access logs</p>
+      </div>
+      <div class="flex gap-3">
+        <a href="https://github.com/emirhankolver/nginx-log-analyzer" target="_blank" class="bg-gray-800 hover:bg-gray-900 text-white font-medium py-2 px-4 rounded-lg transition flex items-center gap-2">
+          <i class="fab fa-github text-xl"></i> Star on GitHub
+        </a>
+        <a href="https://github.com/emirhankolver" target="_blank" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition flex items-center gap-2">
+          <i class="fab fa-github text-xl"></i> Follow Me
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- GitHub Info Banner -->
+  <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-6">
+    <div class="flex items-start gap-4">
+      <div class="bg-blue-600 rounded-full p-3 flex-shrink-0">
+        <i class="fab fa-github text-white text-2xl"></i>
+      </div>
+      <div class="flex-1">
+        <h3 class="text-lg font-bold text-gray-800 mb-2">
+          <i class="fas fa-star text-yellow-500"></i> Open Source Project
+        </h3>
+        <p class="text-gray-700 mb-3">
+          This is a free, open-source tool for analyzing nginx logs. If you find it useful, please consider starring the repository on GitHub! Your support helps me create more awesome tools.
+        </p>
+        <div class="flex flex-wrap gap-3 text-sm">
+          <div class="flex items-center gap-2 text-gray-600">
+            <i class="fas fa-code text-blue-600"></i>
+            <span>100% Free & Open Source</span>
+          </div>
+          <div class="flex items-center gap-2 text-gray-600">
+            <i class="fas fa-bolt text-yellow-600"></i>
+            <span>No Backend Required</span>
+          </div>
+          <div class="flex items-center gap-2 text-gray-600">
+            <i class="fas fa-shield-alt text-green-600"></i>
+            <span>Privacy First - All Data Stays Local</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <label class="block mb-2 text-sm font-medium text-gray-700">
+      <i class="fas fa-file-upload"></i> Upload Log File or Paste Logs
+    </label>
+    <textarea id="logInput" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm" placeholder="Paste your nginx logs here or upload a file..."></textarea>
+    <div class="mt-4 flex gap-2">
+      <button onclick="analyzeLog()" class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">
+        <i class="fas fa-play"></i> Analyze Logs
+      </button>
+      <button onclick="clearResults()" class="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-6 rounded-lg transition">
+        <i class="fas fa-trash"></i> Clear
+      </button>
+    </div>
+  </div>
+
+  <div id="results" class="hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm font-medium">Total Requests</p>
+            <p id="totalRequests" class="text-3xl font-bold text-gray-800">0</p>
+          </div>
+          <div class="bg-blue-100 rounded-full p-3">
+            <i class="fas fa-globe text-blue-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm font-medium">Unique IPs</p>
+            <p id="uniqueIPs" class="text-3xl font-bold text-gray-800">0</p>
+          </div>
+          <div class="bg-green-100 rounded-full p-3">
+            <i class="fas fa-network-wired text-green-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm font-medium">Success Rate</p>
+            <p id="successRate" class="text-3xl font-bold text-gray-800">0%</p>
+          </div>
+          <div class="bg-emerald-100 rounded-full p-3">
+            <i class="fas fa-check-circle text-emerald-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm font-medium">Malicious</p>
+            <p id="maliciousRequests" class="text-3xl font-bold text-gray-800">0</p>
+          </div>
+          <div class="bg-red-100 rounded-full p-3">
+            <i class="fas fa-shield-alt text-red-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+          <i class="fas fa-chart-bar text-purple-600"></i> Status Code Distribution
+        </h3>
+        <div id="statusCodes"></div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+          <i class="fas fa-route text-indigo-600"></i> Top Endpoints
+        </h3>
+        <div id="topEndpoints"></div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-800">
+          <i class="fas fa-table text-blue-600"></i> All Log Entries
+        </h3>
+        <div class="flex gap-2 items-center">
+          <input type="text" id="searchInput" placeholder="Search logs..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <button onclick="searchLogs()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition">
+            <i class="fas fa-search"></i>
+          </button>
+        </div>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('ip')">
+              IP Address <i class="fas fa-sort"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('timestamp')">
+              Timestamp <i class="fas fa-sort"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('method')">
+              Method <i class="fas fa-sort"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('path')">
+              Path <i class="fas fa-sort"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('status')">
+              Status <i class="fas fa-sort"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('bytes')">
+              Bytes <i class="fas fa-sort"></i>
+            </th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+              Actions
+            </th>
+          </tr>
+          </thead>
+          <tbody id="logTableBody">
+          </tbody>
+        </table>
+      </div>
+      <div id="pagination" class="mt-4 flex justify-center gap-2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Footer -->
+<footer class="bg-gray-800 text-white py-8 mt-12">
+  <div class="container mx-auto px-4">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div class="text-center md:text-left">
+        <h3 class="text-xl font-bold mb-2">
+          <i class="fas fa-chart-line"></i> Nginx Log Analyzer
+        </h3>
+        <p class="text-gray-400 text-sm">Made with <i class="fas fa-heart text-red-500"></i> for the DevOps community</p>
+      </div>
+      <div class="flex flex-col items-center md:items-end gap-3">
+        <div class="flex gap-3">
+          <a href="https://github.com/emirhankolver/nginx-log-analyzer" target="_blank" class="bg-white text-gray-800 hover:bg-gray-100 px-4 py-2 rounded-lg transition flex items-center gap-2 font-medium">
+            <i class="fab fa-github"></i> Star on GitHub
+          </a>
+          <a href="https://github.com/emirhankolver/nginx-log-analyzer/issues" target="_blank" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded-lg transition flex items-center gap-2">
+            <i class="fas fa-bug"></i> Report Issue
+          </a>
+        </div>
+        <p class="text-gray-400 text-sm">
+          Found this useful? <a href="https://github.com/emirhankolver" target="_blank" class="text-blue-400 hover:text-blue-300 underline">Follow me on GitHub</a> for more tools!
+        </p>
+      </div>
+    </div>
+    <div class="border-t border-gray-700 mt-6 pt-6 text-center text-gray-400 text-sm">
+      <p>© 2025 Emirhan Kolver. Released under MIT License. All data is processed locally in your browser.</p>
+    </div>
+  </div>
+</footer>
+
+<!-- Details Modal -->
+<div id="detailsModal" class="modal">
+  <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <h2 class="text-2xl font-bold text-gray-800">
+        <i class="fas fa-info-circle text-blue-600"></i> Log Entry Details
+      </h2>
+      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="modalContent" class="p-6"></div>
+  </div>
+</div>
+
+<script>
+  let allLogs = [];
+  let displayedLogs = [];
+  let currentSort = { field: null, ascending: true };
+  let currentPage = 1;
+  const itemsPerPage = 10;
+
+  function parseNginxLog(logLine) {
+    const parts = logLine.match(/^(\S+) \S+ \S+ \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)" "([^"]*)"/);
+    if (!parts) return null;
+
+    const [, ip, timestamp, request, status, bytes, referer, userAgent, xff] = parts;
+    const requestParts = request.split(' ');
+    const method = requestParts[0] || 'UNKNOWN';
+    const path = requestParts[1] || '/';
+
+    return {
+      ip,
+      timestamp,
+      method,
+      path,
+      status: parseInt(status),
+      bytes: parseInt(bytes),
+      userAgent,
+      xff,
+      referer,
+      fullRequest: request
+    };
+  }
+
+  function analyzeLog() {
+    const input = document.getElementById('logInput').value;
+    if (!input.trim()) {
+      alert('Please paste nginx logs first!');
+      return;
+    }
+
+    const lines = input.trim().split('\n');
+    allLogs = lines.map(parseNginxLog).filter(log => log !== null);
+
+    if (allLogs.length === 0) {
+      alert('No valid log entries found!');
+      return;
+    }
+
+    displayedLogs = [...allLogs];
+
+    const stats = calculateStats(allLogs);
+    displayStats(stats);
+    displayTable();
+
+    document.getElementById('results').classList.remove('hidden');
+  }
+
+  function calculateStats(logs) {
+    const stats = {
+      total: logs.length,
+      uniqueIPs: new Set(logs.map(l => l.ip)).size,
+      statusCodes: {},
+      endpoints: {},
+      ips: {},
+      userAgents: {},
+      methods: {},
+      threats: [],
+      totalBytes: 0
+    };
+
+    logs.forEach(log => {
+      stats.statusCodes[log.status] = (stats.statusCodes[log.status] || 0) + 1;
+      stats.endpoints[log.path || 'unknown'] = (stats.endpoints[log.path || 'unknown'] || 0) + 1;
+      stats.ips[log.ip] = (stats.ips[log.ip] || 0) + 1;
+      stats.methods[log.method] = (stats.methods[log.method] || 0) + 1;
+      stats.totalBytes += log.bytes;
+
+      if (log.userAgent && log.userAgent !== '-') {
+        const ua = log.userAgent.substring(0, 50);
+        stats.userAgents[ua] = (stats.userAgents[ua] || 0) + 1;
+      }
+
+      if (log.path && (log.path.includes('phpunit') || log.path.includes('eval') || log.path.includes('vendor'))) {
+        stats.threats.push({ ...log, type: 'PHP Exploit Attempt' });
+      }
+      if (log.status === 444) {
+        stats.threats.push({ ...log, type: 'Blocked Request' });
+      }
+    });
+
+    return stats;
+  }
+
+  function displayStats(stats) {
+    const successCount = Object.keys(stats.statusCodes)
+      .filter(code => code >= 200 && code < 400)
+      .reduce((sum, code) => sum + stats.statusCodes[code], 0);
+    const successRate = ((successCount / stats.total) * 100).toFixed(1);
+
+    document.getElementById('totalRequests').textContent = stats.total;
+    document.getElementById('uniqueIPs').textContent = stats.uniqueIPs;
+    document.getElementById('successRate').textContent = successRate + '%';
+    document.getElementById('maliciousRequests').textContent = stats.threats.length;
+
+    displayStatusCodes(stats.statusCodes);
+    displayTopItems(stats.endpoints, 'topEndpoints', 'fa-route');
+  }
+
+  function displayStatusCodes(codes) {
+    const container = document.getElementById('statusCodes');
+    const sorted = Object.entries(codes).sort((a, b) => b[1] - a[1]);
+
+    container.innerHTML = sorted.map(([code, count]) => {
+      const color = code >= 200 && code < 300 ? 'green' : code >= 400 && code < 500 ? 'yellow' : code >= 500 ? 'red' : 'blue';
+      return `
+                    <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                        <span class="font-medium text-${color}-600">${code}</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-32 bg-gray-200 rounded-full h-2">
+                                <div class="bg-${color}-500 h-2 rounded-full" style="width: ${(count / sorted[0][1]) * 100}%"></div>
+                            </div>
+                            <span class="text-gray-600 font-medium w-12 text-right">${count}</span>
+                        </div>
+                    </div>
+                `;
+    }).join('');
+  }
+
+  function displayTopItems(items, containerId, icon, limit = 10) {
+    const container = document.getElementById(containerId);
+    const sorted = Object.entries(items).sort((a, b) => b[1] - a[1]).slice(0, limit);
+
+    container.innerHTML = sorted.map(([item, count]) => `
+                <div class="flex items-center justify-between py-2 border-b border-gray-100">
+                    <span class="text-gray-700 truncate flex-1"><i class="fas ${icon} text-gray-400 mr-2"></i>${item}</span>
+                    <span class="text-gray-600 font-medium ml-4">${count}</span>
+                </div>
+            `).join('');
+  }
+
+  function displayTable() {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageData = displayedLogs.slice(start, end);
+
+    const tbody = document.getElementById('logTableBody');
+    tbody.innerHTML = pageData.map((log, index) => {
+      const globalIndex = start + index;
+      const statusColor = log.status >= 200 && log.status < 300 ? 'green' :
+        log.status >= 400 && log.status < 500 ? 'yellow' :
+          log.status >= 500 ? 'red' : 'blue';
+      return `
+                    <tr class="border-b border-gray-100 hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm font-mono text-gray-700">${log.ip}</td>
+                        <td class="px-4 py-3 text-sm text-gray-600">${log.timestamp}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs font-medium">${log.method}</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-700 truncate max-w-xs">${log.path}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <span class="bg-${statusColor}-100 text-${statusColor}-800 px-2 py-1 rounded text-xs font-medium">${log.status}</span>
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-600">${log.bytes.toLocaleString()}</td>
+                        <td class="px-4 py-3 text-sm">
+                            <button onclick="showDetails(${globalIndex})" class="text-blue-600 hover:text-blue-800">
+                                <i class="fas fa-info-circle"></i> Details
+                            </button>
+                        </td>
+                    </tr>
+                `;
+    }).join('');
+
+    displayPagination();
+  }
+
+  function displayPagination() {
+    const totalPages = Math.ceil(displayedLogs.length / itemsPerPage);
+    const pagination = document.getElementById('pagination');
+
+    let html = '';
+
+    if (currentPage > 1) {
+      html += `<button onclick="changePage(${currentPage - 1})" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"><i class="fas fa-chevron-left"></i></button>`;
+    }
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === currentPage) {
+        html += `<button class="px-3 py-1 bg-blue-600 text-white rounded">${i}</button>`;
+      } else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+        html += `<button onclick="changePage(${i})" class="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300">${i}</button>`;
+      } else if (i === currentPage - 3 || i === currentPage + 3) {
+        html += `<span class="px-2">...</span>`;
+      }
+    }
+
+    if (currentPage < totalPages) {
+      html += `<button onclick="changePage(${currentPage + 1})" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"><i class="fas fa-chevron-right"></i></button>`;
+    }
+
+    pagination.innerHTML = html;
+  }
+
+  function changePage(page) {
+    currentPage = page;
+    displayTable();
+  }
+
+  function sortTable(field) {
+    if (currentSort.field === field) {
+      currentSort.ascending = !currentSort.ascending;
+    } else {
+      currentSort.field = field;
+      currentSort.ascending = true;
+    }
+
+    displayedLogs.sort((a, b) => {
+      let aVal = a[field];
+      let bVal = b[field];
+
+      if (typeof aVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+      }
+
+      if (aVal < bVal) return currentSort.ascending ? -1 : 1;
+      if (aVal > bVal) return currentSort.ascending ? 1 : -1;
+      return 0;
+    });
+
+    currentPage = 1;
+    displayTable();
+  }
+
+  function searchLogs() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+    if (!searchTerm) {
+      displayedLogs = [...allLogs];
+    } else {
+      displayedLogs = allLogs.filter(log =>
+        log.ip.toLowerCase().includes(searchTerm) ||
+        log.path.toLowerCase().includes(searchTerm) ||
+        log.method.toLowerCase().includes(searchTerm) ||
+        log.userAgent.toLowerCase().includes(searchTerm) ||
+        log.status.toString().includes(searchTerm)
+      );
+    }
+
+    currentPage = 1;
+    displayTable();
+  }
+
+  document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+      searchLogs();
+    }
+  });
+
+  function showDetails(index) {
+    const log = displayedLogs[index];
+    const stats = calculateStatsForIP(log.ip);
+
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">
+                            <i class="fas fa-server text-blue-600"></i> Request Information
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">IP Address</label>
+                                <p class="text-sm font-mono text-gray-800 bg-gray-50 p-2 rounded">${log.ip}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">Timestamp</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded">${log.timestamp}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">Method</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded">${log.method}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">Path</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded break-all">${log.path}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">Full Request</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded break-all">${log.fullRequest}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-semibold text-gray-800 border-b pb-2">
+                            <i class="fas fa-chart-bar text-green-600"></i> Response Information
+                        </h3>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">Status Code</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded">
+                                    <span class="font-bold">${log.status}</span> - ${getStatusText(log.status)}
+                                </p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">Bytes Sent</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded">${log.bytes.toLocaleString()} bytes (${(log.bytes / 1024).toFixed(2)} KB)</p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">User Agent</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded break-all">${log.userAgent}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">Referer</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded break-all">${log.referer}</p>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 font-medium">X-Forwarded-For</label>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded">${log.xff}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <h3 class="text-lg font-semibold text-gray-800 mb-4">
+                        <i class="fas fa-chart-pie text-purple-600"></i> IP Statistics (${log.ip})
+                    </h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="bg-blue-50 p-4 rounded-lg">
+                            <p class="text-xs text-gray-600 font-medium">Total Requests</p>
+                            <p class="text-2xl font-bold text-blue-600">${stats.totalRequests}</p>
+                        </div>
+                        <div class="bg-green-50 p-4 rounded-lg">
+                            <p class="text-xs text-gray-600 font-medium">Success (2xx)</p>
+                            <p class="text-2xl font-bold text-green-600">${stats.success}</p>
+                        </div>
+                        <div class="bg-yellow-50 p-4 rounded-lg">
+                            <p class="text-xs text-gray-600 font-medium">Client Errors (4xx)</p>
+                            <p class="text-2xl font-bold text-yellow-600">${stats.clientErrors}</p>
+                        </div>
+                        <div class="bg-red-50 p-4 rounded-lg">
+                            <p class="text-xs text-gray-600 font-medium">Server Errors (5xx)</p>
+                            <p class="text-2xl font-bold text-red-600">${stats.serverErrors}</p>
+                        </div>
+                    </div>
+
+                    <div class="mt-4">
+                        <h4 class="text-sm font-semibold text-gray-700 mb-2">Endpoints Accessed</h4>
+                        <div class="bg-gray-50 p-3 rounded max-h-40 overflow-y-auto">
+                            ${Object.entries(stats.endpoints).map(([path, count]) => `
+                                <div class="flex justify-between text-sm py-1">
+                                    <span class="text-gray-700">${path}</span>
+                                    <span class="text-gray-500 font-medium">${count}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  function calculateStatsForIP(ip) {
+    const ipLogs = allLogs.filter(log => log.ip === ip);
+    const stats = {
+      totalRequests: ipLogs.length,
+      success: 0,
+      clientErrors: 0,
+      serverErrors: 0,
+      endpoints: {}
+    };
+
+    ipLogs.forEach(log => {
+      if (log.status >= 200 && log.status < 300) stats.success++;
+      if (log.status >= 400 && log.status < 500) stats.clientErrors++;
+      if (log.status >= 500 && log.status < 600) stats.serverErrors++;
+      stats.endpoints[log.path] = (stats.endpoints[log.path] || 0) + 1;
+    });
+
+    return stats;
+  }
+
+  function getStatusText(status) {
+    const statusTexts = {
+      200: 'OK',
+      400: 'Bad Request',
+      404: 'Not Found',
+      444: 'Connection Closed Without Response',
+      500: 'Internal Server Error',
+      502: 'Bad Gateway',
+      503: 'Service Unavailable'
+    };
+    return statusTexts[status] || 'Unknown Status';
+  }
+
+  function closeModal() {
+    document.getElementById('detailsModal').classList.remove('active');
+  }
+
+  window.onclick = function(event) {
+    const modal = document.getElementById('detailsModal');
+    if (event.target === modal) {
+      closeModal();
+    }
+  }
+
+  function clearResults() {
+    document.getElementById('logInput').value = '';
+    document.getElementById('searchInput').value = '';
+    document.getElementById('results').classList.add('hidden');
+    allLogs = [];
+    displayedLogs = [];
+    currentPage = 1;
+  }
+</script>
+</body>
+</html>
