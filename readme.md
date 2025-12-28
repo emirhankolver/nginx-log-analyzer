@@ -9,6 +9,34 @@ A powerful, lightweight, and privacy-focused web-based tool for analyzing nginx 
 ![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?logo=tailwind-css&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
 
+## 📸 Screenshots
+
+### Main Dashboard
+<img width="3456" height="1772" alt="resim" src="https://github.com/user-attachments/assets/0f6ad4dd-0508-4d9b-98b1-d4e26f8498bb" />
+
+*Overview with key metrics and status distribution*
+
+### Log Table with Search
+<img width="3456" height="1772" alt="resim" src="https://github.com/user-attachments/assets/3f025f55-bf2e-4f00-a657-d2e968cfc8bc" />
+
+*Interactive table with sorting and search capabilities*
+
+### Detailed Log View
+<img width="3456" height="1772" alt="resim" src="https://github.com/user-attachments/assets/7afa6d58-e3d7-4c8e-846d-0fb1edd2524a" />
+
+*Comprehensive log entry details with IP statistics*
+
+### Malicious & Suspicious Requests
+<img width="1792" height="1532" alt="resim" src="https://github.com/user-attachments/assets/df296b4d-03bc-4938-8e6d-1fa56c2b90a5" />
+
+*Framework exploit attempts and sources by IP Addresses*
+
+### IP Address Statistics
+<img width="1792" height="1532" alt="resim" src="https://github.com/user-attachments/assets/bc9d568d-fd31-416b-90a2-a8f34b7e6b8c" />
+
+*Framework exploit attempts and sources by IP Addresses*
+
+
 ## ✨ Features
 
 ### 📊 Comprehensive Statistics
@@ -51,23 +79,6 @@ A powerful, lightweight, and privacy-focused web-based tool for analyzing nginx 
 - No backend server required
 - No data collection or tracking
 - Works completely offline after initial load
-
-## 📸 Screenshots
-
-### Main Dashboard
-<img width="3456" height="1772" alt="resim" src="https://github.com/user-attachments/assets/0f6ad4dd-0508-4d9b-98b1-d4e26f8498bb" />
-
-*Overview with key metrics and status distribution*
-
-### Log Table with Search
-<img width="3456" height="1772" alt="resim" src="https://github.com/user-attachments/assets/3f025f55-bf2e-4f00-a657-d2e968cfc8bc" />
-
-*Interactive table with sorting and search capabilities*
-
-### Detailed Log View
-<img width="3456" height="1772" alt="resim" src="https://github.com/user-attachments/assets/7afa6d58-e3d7-4c8e-846d-0fb1edd2524a" />
-
-*Comprehensive log entry details with IP statistics*
 
 ## 🚀 Quick Start
 
