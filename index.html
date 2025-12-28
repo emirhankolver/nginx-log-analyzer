@@ -63,6 +63,16 @@
           background-color: #f3f4f6;
           cursor: pointer;
       }
+
+      .stat-card {
+          cursor: pointer;
+          transition: all 0.2s ease;
+      }
+
+      .stat-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -142,7 +152,8 @@
 
   <div id="results" class="hidden">
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <!-- Total Requests Card -->
+      <div class="stat-card bg-white rounded-lg shadow-md p-6" onclick="showTotalRequestsModal()">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-gray-500 text-sm font-medium">Total Requests</p>
@@ -152,9 +163,13 @@
             <i class="fas fa-globe text-blue-600 text-2xl"></i>
           </div>
         </div>
+        <div class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+          <i class="fas fa-info-circle"></i> Click for detailed breakdown
+        </div>
       </div>
 
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <!-- Unique IPs Card -->
+      <div class="stat-card bg-white rounded-lg shadow-md p-6" onclick="showUniqueIPsModal()">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-gray-500 text-sm font-medium">Unique IPs</p>
@@ -164,9 +179,13 @@
             <i class="fas fa-network-wired text-green-600 text-2xl"></i>
           </div>
         </div>
+        <div class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+          <i class="fas fa-info-circle"></i> Click to view all IPs
+        </div>
       </div>
 
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <!-- Success Rate Card -->
+      <div class="stat-card bg-white rounded-lg shadow-md p-6" onclick="showSuccessRateModal()">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-gray-500 text-sm font-medium">Success Rate</p>
@@ -176,9 +195,13 @@
             <i class="fas fa-check-circle text-emerald-600 text-2xl"></i>
           </div>
         </div>
+        <div class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+          <i class="fas fa-info-circle"></i> Click for status code details
+        </div>
       </div>
 
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <!-- Malicious Card -->
+      <div class="stat-card bg-white rounded-lg shadow-md p-6" onclick="showMaliciousModal()">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-gray-500 text-sm font-medium">Malicious</p>
@@ -187,6 +210,9 @@
           <div class="bg-red-100 rounded-full p-3">
             <i class="fas fa-shield-alt text-red-600 text-2xl"></i>
           </div>
+        </div>
+        <div class="mt-2 text-xs text-gray-500 flex items-center gap-1">
+          <i class="fas fa-info-circle"></i> Click to view threats
         </div>
       </div>
     </div>
@@ -299,7 +325,7 @@
   </div>
 </footer>
 
-<!-- Details Modal -->
+<!-- Details Modal for Log Entries -->
 <div id="detailsModal" class="modal">
   <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
     <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
@@ -314,12 +340,73 @@
   </div>
 </div>
 
+<!-- Modal for Total Requests -->
+<div id="totalRequestsModal" class="modal">
+  <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <h2 class="text-2xl font-bold text-gray-800">
+        <i class="fas fa-globe text-blue-600"></i> Total Requests Analysis
+      </h2>
+      <button onclick="closeTotalRequestsModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="totalRequestsContent" class="p-6"></div>
+  </div>
+</div>
+
+<!-- Modal for Unique IPs -->
+<div id="uniqueIPsModal" class="modal">
+  <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <h2 class="text-2xl font-bold text-gray-800">
+        <i class="fas fa-network-wired text-green-600"></i> Unique IP Addresses
+      </h2>
+      <button onclick="closeUniqueIPsModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="uniqueIPsContent" class="p-6"></div>
+  </div>
+</div>
+
+<!-- Modal for Success Rate -->
+<div id="successRateModal" class="modal">
+  <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <h2 class="text-2xl font-bold text-gray-800">
+        <i class="fas fa-check-circle text-emerald-600"></i> Success Rate Analysis
+      </h2>
+      <button onclick="closeSuccessRateModal()" class="text-gray400 hover:text-gray-600 text-2xl">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="successRateContent" class="p-6"></div>
+  </div>
+</div>
+
+<!-- Modal for Malicious Requests -->
+<div id="maliciousModal" class="modal">
+  <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <h2 class="text-2xl font-bold text-gray-800">
+        <i class="fas fa-shield-alt text-red-600"></i> Malicious & Suspicious Requests
+      </h2>
+      <button onclick="closeMaliciousModal()" class="text-gray-400 hover:text-gray-600 text-2xl">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <div id="maliciousContent" class="p-6"></div>
+  </div>
+</div>
+
 <script>
   let allLogs = [];
   let displayedLogs = [];
   let currentSort = { field: null, ascending: true };
   let currentPage = 1;
   const itemsPerPage = 10;
+  let currentStats = {};
 
   function parseNginxLog(logLine) {
     const parts = logLine.match(/^(\S+) \S+ \S+ \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)" "([^"]*)"/);
@@ -360,9 +447,9 @@
     }
 
     displayedLogs = [...allLogs];
+    currentStats = calculateStats(allLogs);
 
-    const stats = calculateStats(allLogs);
-    displayStats(stats);
+    displayStats(currentStats);
     displayTable();
 
     document.getElementById('results').classList.remove('hidden');
@@ -379,30 +466,70 @@
       methods: {},
       threats: [],
       totalBytes: 0,
+      successCodes: 0,
+      clientErrorCodes: 0,
+      serverErrorCodes: 0,
+      redirectCodes: 0,
+      ipDetails: {},
+      maliciousDetails: {},
     };
 
     logs.forEach(log => {
       stats.statusCodes[log.status] = (stats.statusCodes[log.status] || 0) + 1;
       stats.endpoints[log.path || 'unknown'] = (stats.endpoints[log.path || 'unknown'] || 0) + 1;
-      stats.ips[log.ip] = (stats.ips[log.ip] || 0) + 1;
       stats.methods[log.method] = (stats.methods[log.method] || 0) + 1;
       stats.totalBytes += log.bytes;
+
+      // Count by status category
+      if (log.status >= 200 && log.status < 300) stats.successCodes++;
+      if (log.status >= 300 && log.status < 400) stats.redirectCodes++;
+      if (log.status >= 400 && log.status < 500) stats.clientErrorCodes++;
+      if (log.status >= 500 && log.status < 600) stats.serverErrorCodes++;
+
+      // Track IP details
+      if (!stats.ipDetails[log.ip]) {
+        stats.ipDetails[log.ip] = {
+          count: 0,
+          lastSeen: log.timestamp,
+          methods: new Set(),
+          paths: new Set(),
+          statusCodes: new Set(),
+        };
+      }
+      stats.ipDetails[log.ip].count++;
+      stats.ipDetails[log.ip].lastSeen = log.timestamp;
+      stats.ipDetails[log.ip].methods.add(log.method);
+      stats.ipDetails[log.ip].paths.add(log.path);
+      stats.ipDetails[log.ip].statusCodes.add(log.status);
+
+      // Track IP counts
+      stats.ips[log.ip] = (stats.ips[log.ip] || 0) + 1;
+
+      // Detect malicious patterns
+      let threatType = null;
+      if (log.path && (log.path.includes('phpunit') || log.path.includes('eval') || log.path.includes('vendor') || log.path.includes('.env') || log.path.includes('config'))) {
+        threatType = 'PHP Exploit Attempt';
+      } else if (log.path && (log.path.includes('/_next/server') || log.path.includes('wp-admin') || log.path.includes('wp-login'))) {
+        threatType = 'Framework Exploit Attempt';
+      } else if (log.status === 444) {
+        threatType = 'Blocked Request';
+      } else if (log.status === 403) {
+        threatType = 'Forbidden Access Attempt';
+      } else if (log.status === 401) {
+        threatType = 'Unauthorized Access Attempt';
+      }
+
+      if (threatType) {
+        stats.threats.push({ ...log, type: threatType });
+        if (!stats.maliciousDetails[threatType]) {
+          stats.maliciousDetails[threatType] = [];
+        }
+        stats.maliciousDetails[threatType].push(log);
+      }
 
       if (log.userAgent && log.userAgent !== '-') {
         const ua = log.userAgent.substring(0, 50);
         stats.userAgents[ua] = (stats.userAgents[ua] || 0) + 1;
-      }
-
-      if (log.path && (log.path.includes('phpunit') || log.path.includes('eval') || log.path.includes('vendor'))) {
-        stats.threats.push({ ...log, type: 'PHP Exploit Attempt' });
-      }
-
-      if (log.path && (log.path.includes('/_next/server'))) {
-        stats.threats.push({ ...log, type: 'Next.js Exploit Attempt' });
-      }
-
-      if (log.status === 444) {
-        stats.threats.push({ ...log, type: 'Blocked Request' });
       }
     });
 
@@ -456,6 +583,664 @@
             `).join('');
   }
 
+  // Modal Functions for Stat Cards
+  function showTotalRequestsModal() {
+    if (!currentStats.total) return;
+
+    const content = document.getElementById('totalRequestsContent');
+    const stats = currentStats;
+
+    content.innerHTML = `
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-blue-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Total Requests</p>
+            <p class="text-3xl font-bold text-blue-600">${stats.total}</p>
+          </div>
+          <div class="bg-green-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Total Data</p>
+            <p class="text-3xl font-bold text-green-600">${(stats.totalBytes / (1024 * 1024)).toFixed(2)} MB</p>
+          </div>
+          <div class="bg-purple-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Avg. Bytes/Req</p>
+            <p class="text-3xl font-bold text-purple-600">${(stats.totalBytes / stats.total).toFixed(0)}</p>
+          </div>
+          <div class="bg-indigo-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Time Range</p>
+            <p class="text-sm font-bold text-indigo-600">${getTimeRange()}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              <i class="fas fa-code-branch text-blue-600"></i> Request Methods
+            </h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              ${Object.entries(stats.methods).sort((a, b) => b[1] - a[1]).map(([method, count]) => `
+                <div class="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                  <span class="font-medium text-gray-700">${method}</span>
+                  <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">${count}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              <i class="fas fa-chart-pie text-green-600"></i> Request Distribution
+            </h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="space-y-3">
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span class="text-sm text-gray-600">Success (2xx)</span>
+                    <span class="text-sm font-medium">${stats.successCodes}</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-green-500 h-2 rounded-full" style="width: ${(stats.successCodes / stats.total) * 100}%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span class="text-sm text-gray-600">Redirects (3xx)</span>
+                    <span class="text-sm font-medium">${stats.redirectCodes}</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-blue-500 h-2 rounded-full" style="width: ${(stats.redirectCodes / stats.total) * 100}%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span class="text-sm text-gray-600">Client Errors (4xx)</span>
+                    <span class="text-sm font-medium">${stats.clientErrorCodes}</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-yellow-500 h-2 rounded-full" style="width: ${(stats.clientErrorCodes / stats.total) * 100}%"></div>
+                  </div>
+                </div>
+                <div>
+                  <div class="flex justify-between mb-1">
+                    <span class="text-sm text-gray-600">Server Errors (5xx)</span>
+                    <span class="text-sm font-medium">${stats.serverErrorCodes}</span>
+                  </div>
+                  <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div class="bg-red-500 h-2 rounded-full" style="width: ${(stats.serverErrorCodes / stats.total) * 100}%"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-history text-purple-600"></i> Request Timeline
+          </h3>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-gray-600 text-sm">
+              <i class="fas fa-info-circle text-blue-500"></i>
+              The log contains ${stats.total} requests spanning ${getTimeRangeDescription()}.
+              Average request size is ${(stats.totalBytes / stats.total).toFixed(0)} bytes.
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('totalRequestsModal').classList.add('active');
+  }
+
+  function showUniqueIPsModal() {
+    if (!currentStats.uniqueIPs) return;
+
+    const content = document.getElementById('uniqueIPsContent');
+    const stats = currentStats;
+    const topIPs = Object.entries(stats.ips).sort((a, b) => b[1] - a[1]).slice(0, 20);
+
+    content.innerHTML = `
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-green-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Unique IPs</p>
+            <p class="text-3xl font-bold text-green-600">${stats.uniqueIPs}</p>
+          </div>
+          <div class="bg-blue-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Top IP Activity</p>
+            <p class="text-3xl font-bold text-blue-600">${topIPs[0] ? topIPs[0][1] : 0}</p>
+          </div>
+          <div class="bg-purple-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Avg Requests/IP</p>
+            <p class="text-3xl font-bold text-purple-600">${(stats.total / stats.uniqueIPs).toFixed(1)}</p>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-list-ol text-green-600"></i> Top 20 IP Addresses
+          </h3>
+          <div class="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
+            <table class="w-full">
+              <thead class="bg-gray-100">
+                <tr>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Requests</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Last Seen</th>
+                  <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                ${topIPs.map(([ip, count]) => {
+      const ipDetails = stats.ipDetails[ip];
+      return `
+                    <tr>
+                      <td class="px-4 py-2 text-sm font-mono">
+                        <a href="https://ipinfo.io/${ip}" target="_blank" rel="noopener noreferrer"
+                           class="text-blue-600 hover:text-blue-800 hover:underline">${ip}</a>
+                      </td>
+                      <td class="px-4 py-2 text-sm">
+                        <span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs font-medium">${count}</span>
+                      </td>
+                      <td class="px-4 py-2 text-sm text-gray-600">${ipDetails ? ipDetails.lastSeen : 'N/A'}</td>
+                      <td class="px-4 py-2 text-sm">
+                        <button onclick="showIPDetails('${ip}')" class="text-blue-600 hover:text-blue-800">
+                          <i class="fas fa-search"></i> Details
+                        </button>
+                      </td>
+                    </tr>
+                  `;
+    }).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-bar text-blue-600"></i> IP Request Distribution
+          </h3>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <p class="text-gray-600 text-sm mb-3">
+              <i class="fas fa-info-circle text-blue-500"></i>
+              Showing IP distribution across ${topIPs.length} of ${stats.uniqueIPs} unique IP addresses.
+            </p>
+            <div class="space-y-2">
+              ${topIPs.map(([ip, count]) => {
+      const percentage = (count / stats.total * 100).toFixed(1);
+      return `
+                  <div>
+                    <div class="flex justify-between text-sm mb-1">
+                      <span class="font-mono truncate">${ip}</span>
+                      <span class="font-medium">${count} (${percentage}%)</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2">
+                      <div class="bg-green-500 h-2 rounded-full" style="width: ${percentage}%"></div>
+                    </div>
+                  </div>
+                `;
+    }).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('uniqueIPsModal').classList.add('active');
+  }
+
+  function showSuccessRateModal() {
+    if (!currentStats.total) return;
+
+    const content = document.getElementById('successRateContent');
+    const stats = currentStats;
+    const successRate = ((stats.successCodes / stats.total) * 100).toFixed(1);
+
+    content.innerHTML = `
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-emerald-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Success Rate</p>
+            <p class="text-3xl font-bold text-emerald-600">${successRate}%</p>
+          </div>
+          <div class="bg-green-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Success (2xx)</p>
+            <p class="text-3xl font-bold text-green-600">${stats.successCodes}</p>
+          </div>
+          <div class="bg-yellow-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Client Errors (4xx)</p>
+            <p class="text-3xl font-bold text-yellow-600">${stats.clientErrorCodes}</p>
+          </div>
+          <div class="bg-red-50 p-4 rounded-lg">
+            <p class="text-xs text-gray-600 font-medium">Server Errors (5xx)</p>
+            <p class="text-3xl font-bold text-red-600">${stats.serverErrorCodes}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              <i class="fas fa-list-ol text-emerald-600"></i> Status Code Breakdown
+            </h3>
+            <div class="bg-gray-50 p-4 rounded-lg max-h-80 overflow-y-auto">
+              ${Object.entries(stats.statusCodes).sort((a, b) => b[1] - a[1]).map(([code, count]) => {
+      const color = code >= 200 && code < 300 ? 'green' : code >= 400 && code < 500 ? 'yellow' : code >= 500 ? 'red' : 'blue';
+      const percentage = ((count / stats.total) * 100).toFixed(1);
+      return `
+                  <div class="flex justify-between items-center py-2 border-b border-gray-200 last:border-b-0">
+                    <div>
+                      <span class="font-bold text-${color}-600">${code}</span>
+                      <span class="text-sm text-gray-600 ml-2">${getStatusText(code)}</span>
+                    </div>
+                    <div class="flex items-center gap-4">
+                      <div class="w-32 bg-gray-200 rounded-full h-2">
+                        <div class="bg-${color}-500 h-2 rounded-full" style="width: ${percentage}%"></div>
+                      </div>
+                      <span class="text-gray-700 font-medium w-12 text-right">${count}</span>
+                    </div>
+                  </div>
+                `;
+    }).join('')}
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              <i class="fas fa-chart-pie text-blue-600"></i> Status Category Distribution
+            </h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <div class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <span class="text-sm font-medium">Success (2xx)</span>
+                  </div>
+                  <span class="font-bold text-green-600">${stats.successCodes}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <span class="text-sm font-medium">Redirects (3xx)</span>
+                  </div>
+                  <span class="font-bold text-blue-600">${stats.redirectCodes}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 bg-yellow-500 rounded-full"></div>
+                    <span class="text-sm font-medium">Client Errors (4xx)</span>
+                  </div>
+                  <span class="font-bold text-yellow-600">${stats.clientErrorCodes}</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <span class="text-sm font-medium">Server Errors (5xx)</span>
+                  </div>
+                  <span class="font-bold text-red-600">${stats.serverErrorCodes}</span>
+                </div>
+              </div>
+
+              <div class="mt-6 p-3 bg-blue-50 rounded-lg">
+                <p class="text-sm text-blue-800">
+                  <i class="fas fa-lightbulb"></i>
+                  <strong>Tip:</strong> A healthy success rate is typically above 95%.
+                  High 4xx rates may indicate broken links, while high 5xx rates suggest server issues.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-exclamation-triangle text-red-600"></i> Common Error Patterns
+          </h3>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            ${getCommonErrors(stats).map(error => `
+              <div class="mb-3 last:mb-0">
+                <div class="flex justify-between items-center mb-1">
+                  <span class="font-medium text-gray-700">${error.code} - ${error.description}</span>
+                  <span class="text-sm font-medium text-red-600">${error.count} occurrences</span>
+                </div>
+                <p class="text-sm text-gray-600">${error.solution}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('successRateModal').classList.add('active');
+  }
+
+  function showMaliciousModal() {
+    if (!currentStats.threats.length) {
+      const content = document.getElementById('maliciousContent');
+      content.innerHTML = `
+        <div class="text-center py-12">
+          <div class="bg-green-100 rounded-full p-4 inline-flex mb-4">
+            <i class="fas fa-shield-alt text-green-600 text-4xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-gray-800 mb-2">No Threats Detected!</h3>
+          <p class="text-gray-600">Great news! No suspicious or malicious requests were found in your logs.</p>
+        </div>
+      `;
+    } else {
+      const content = document.getElementById('maliciousContent');
+      const stats = currentStats;
+
+      content.innerHTML = `
+        <div class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-red-50 p-4 rounded-lg">
+              <p class="text-xs text-gray-600 font-medium">Total Threats</p>
+              <p class="text-3xl font-bold text-red-600">${stats.threats.length}</p>
+            </div>
+            <div class="bg-orange-50 p-4 rounded-lg">
+              <p class="text-xs text-gray-600 font-medium">Threat Types</p>
+              <p class="text-3xl font-bold text-orange-600">${Object.keys(stats.maliciousDetails).length}</p>
+            </div>
+            <div class="bg-yellow-50 p-4 rounded-lg">
+              <p class="text-xs text-gray-600 font-medium">Unique Source IPs</p>
+              <p class="text-3xl font-bold text-yellow-600">${new Set(stats.threats.map(t => t.ip)).size}</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg">
+              <p class="text-xs text-gray-600 font-medium">Threat Rate</p>
+              <p class="text-3xl font-bold text-purple-600">${((stats.threats.length / stats.total) * 100).toFixed(2)}%</p>
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              <i class="fas fa-list-ol text-red-600"></i> Threat Categories
+            </h3>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              ${Object.entries(stats.maliciousDetails).map(([type, logs]) => {
+        const uniqueIPs = new Set(logs.map(l => l.ip)).size;
+        return `
+                  <div class="mb-4 p-3 bg-red-50 rounded-lg last:mb-0">
+                    <div class="flex justify-between items-center mb-2">
+                      <h4 class="font-bold text-red-700">${type}</h4>
+                      <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                        ${logs.length} requests from ${uniqueIPs} IPs
+                      </span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-2">
+                      <strong>Common patterns:</strong> ${logs.slice(0, 3).map(l => l.path).join(', ')}
+                    </div>
+                    <div class="flex gap-2">
+                      <button onclick="showThreatDetails('${type}')" class="text-sm bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded">
+                        <i class="fas fa-search"></i> View Details
+                      </button>
+                    </div>
+                  </div>
+                `;
+      }).join('')}
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">
+              <i class="fas fa-globe-americas text-blue-600"></i> Top Threat Sources
+            </h3>
+            <div class="bg-gray-50 p-4 rounded-lg max-h-64 overflow-y-auto">
+              <table class="w-full">
+                <thead class="bg-gray-100">
+                  <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">IP Address</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Threat Count</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Threat Types</th>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  ${Object.entries(stats.threats.reduce((acc, threat) => {
+        acc[threat.ip] = acc[threat.ip] || { count: 0, types: new Set() };
+        acc[threat.ip].count++;
+        acc[threat.ip].types.add(threat.type);
+        return acc;
+      }, {})).sort((a, b) => b[1].count - a[1].count).slice(0, 10).map(([ip, data]) => `
+                    <tr>
+                      <td class="px-4 py-2 text-sm font-mono">
+                        <a href="https://ipinfo.io/${ip}" target="_blank" rel="noopener noreferrer"
+                           class="text-red-600 hover:text-red-800 hover:underline">${ip}</a>
+                      </td>
+                      <td class="px-4 py-2 text-sm">
+                        <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs font-medium">${data.count}</span>
+                      </td>
+                      <td class="px-4 py-2 text-sm">
+                        ${Array.from(data.types).map(type => `
+                          <span class="inline-block bg-red-50 text-red-700 text-xs px-2 py-1 rounded mr-1 mb-1">${type}</span>
+                        `).join('')}
+                      </td>
+                      <td class="px-4 py-2 text-sm">
+                        <button onclick="showIPThreats('${ip}')" class="text-red-600 hover:text-red-800">
+                          <i class="fas fa-search"></i> Investigate
+                        </button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="p-4 bg-blue-50 rounded-lg">
+            <h4 class="font-bold text-blue-800 mb-2">
+              <i class="fas fa-lightbulb"></i> Security Recommendations
+            </h4>
+            <ul class="list-disc list-inside text-sm text-blue-700 space-y-1">
+              <li>Consider blocking IPs with repeated malicious requests</li>
+              <li>Implement rate limiting for suspicious paths</li>
+              <li>Monitor for patterns in attack attempts</li>
+              <li>Keep server software updated with security patches</li>
+              <li>Consider implementing a Web Application Firewall (WAF)</li>
+            </ul>
+          </div>
+        </div>
+      `;
+    }
+
+    document.getElementById('maliciousModal').classList.add('active');
+  }
+
+  // Helper functions for modals
+  function getTimeRange() {
+    if (allLogs.length === 0) return 'N/A';
+    const timestamps = allLogs.map(l => new Date(l.timestamp.replace(':', ' ')));
+    const minTime = new Date(Math.min(...timestamps));
+    const maxTime = new Date(Math.max(...timestamps));
+    return `${minTime.toLocaleString()} - ${maxTime.toLocaleString()}`;
+  }
+
+  function getTimeRangeDescription() {
+    if (allLogs.length === 0) return 'an unknown period';
+    const timestamps = allLogs.map(l => new Date(l.timestamp.replace(':', ' ')));
+    const minTime = new Date(Math.min(...timestamps));
+    const maxTime = new Date(Math.max(...timestamps));
+    const diffHours = (maxTime - minTime) / (1000 * 60 * 60);
+
+    if (diffHours < 1) return 'less than an hour';
+    if (diffHours < 24) return `${diffHours.toFixed(1)} hours`;
+    return `${(diffHours / 24).toFixed(1)} days`;
+  }
+
+  function getCommonErrors(stats) {
+    const commonErrors = [];
+
+    if (stats.statusCodes[404]) {
+      commonErrors.push({
+        code: '404',
+        description: 'Not Found',
+        count: stats.statusCodes[404],
+        solution: 'Check for broken links or missing resources.',
+      });
+    }
+
+    if (stats.statusCodes[500]) {
+      commonErrors.push({
+        code: '500',
+        description: 'Internal Server Error',
+        count: stats.statusCodes[500],
+        solution: 'Server-side issue. Check application logs.',
+      });
+    }
+
+    if (stats.statusCodes[403]) {
+      commonErrors.push({
+        code: '403',
+        description: 'Forbidden',
+        count: stats.statusCodes[403],
+        solution: 'Permission or authentication issue.',
+      });
+    }
+
+    return commonErrors;
+  }
+
+  function showIPDetails(ip) {
+    const stats = currentStats;
+    const ipLogs = allLogs.filter(log => log.ip === ip);
+    const ipStats = calculateStatsForIP(ip);
+
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = `
+      <div class="space-y-6">
+        <div class="bg-gray-50 p-4 rounded-lg">
+          <h3 class="text-lg font-bold text-gray-800 mb-2">
+            <i class="fas fa-user-secret"></i> IP Address Analysis: ${ip}
+          </h3>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+            <div class="bg-blue-50 p-3 rounded">
+              <p class="text-xs text-gray-600">Total Requests</p>
+              <p class="text-xl font-bold text-blue-600">${ipStats.totalRequests}</p>
+            </div>
+            <div class="bg-green-50 p-3 rounded">
+              <p class="text-xs text-gray-600">Success Rate</p>
+              <p class="text-xl font-bold text-green-600">${((ipStats.success / ipStats.totalRequests) * 100).toFixed(1)}%</p>
+            </div>
+            <div class="bg-yellow-50 p-3 rounded">
+              <p class="text-xs text-gray-600">Unique Paths</p>
+              <p class="text-xl font-bold text-yellow-600">${Object.keys(ipStats.endpoints).length}</p>
+            </div>
+            <div class="bg-purple-50 p-3 rounded">
+              <p class="text-xs text-gray-600">Last Activity</p>
+              <p class="text-sm font-bold text-purple-600">${ipLogs[ipLogs.length - 1]?.timestamp || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    closeUniqueIPsModal();
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  function showThreatDetails(type) {
+    const threats = currentStats.maliciousDetails[type] || [];
+
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = `
+      <div class="space-y-6">
+        <div class="bg-red-50 p-4 rounded-lg">
+          <h3 class="text-lg font-bold text-red-800 mb-2">
+            <i class="fas fa-exclamation-triangle"></i> ${type}
+          </h3>
+          <p class="text-red-700">${threats.length} requests detected</p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">IP Address</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Timestamp</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Path</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${threats.slice(0, 20).map(threat => `
+                <tr class="border-b">
+                  <td class="px-4 py-2 text-sm font-mono">${threat.ip}</td>
+                  <td class="px-4 py-2 text-sm">${threat.timestamp}</td>
+                  <td class="px-4 py-2 text-sm">${threat.path}</td>
+                  <td class="px-4 py-2 text-sm">
+                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">${threat.status}</span>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    closeMaliciousModal();
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  function showIPThreats(ip) {
+    const threats = currentStats.threats.filter(t => t.ip === ip);
+
+    const modalContent = document.getElementById('modalContent');
+    modalContent.innerHTML = `
+      <div class="space-y-6">
+        <div class="bg-red-50 p-4 rounded-lg">
+          <h3 class="text-lg font-bold text-red-800 mb-2">
+            <i class="fas fa-user-secret"></i> Threat Analysis for IP: ${ip}
+          </h3>
+          <p class="text-red-700">${threats.length} malicious requests detected</p>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-100">
+              <tr>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Type</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Timestamp</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Path</th>
+                <th class="px-4 py-2 text-left text-xs font-medium text-gray-500">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${threats.map(threat => `
+                <tr class="border-b">
+                  <td class="px-4 py-2 text-sm">
+                    <span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">${threat.type}</span>
+                  </td>
+                  <td class="px-4 py-2 text-sm">${threat.timestamp}</td>
+                  <td class="px-4 py-2 text-sm">${threat.path}</td>
+                  <td class="px-4 py-2 text-sm">${threat.status}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    closeMaliciousModal();
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  // Modal close functions
+  function closeTotalRequestsModal() {
+    document.getElementById('totalRequestsModal').classList.remove('active');
+  }
+
+  function closeUniqueIPsModal() {
+    document.getElementById('uniqueIPsModal').classList.remove('active');
+  }
+
+  function closeSuccessRateModal() {
+    document.getElementById('successRateModal').classList.remove('active');
+  }
+
+  function closeMaliciousModal() {
+    document.getElementById('maliciousModal').classList.remove('active');
+  }
+
+  // Original functions (unchanged except for calculateStatsForIP reference)
   function displayTable() {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
@@ -724,10 +1509,13 @@
   }
 
   window.onclick = function(event) {
-    const modal = document.getElementById('detailsModal');
-    if (event.target === modal) {
-      closeModal();
-    }
+    const modals = ['detailsModal', 'totalRequestsModal', 'uniqueIPsModal', 'successRateModal', 'maliciousModal'];
+    modals.forEach(modalId => {
+      const modal = document.getElementById(modalId);
+      if (event.target === modal) {
+        modal.classList.remove('active');
+      }
+    });
   };
 
   function clearResults() {
@@ -736,7 +1524,14 @@
     document.getElementById('results').classList.add('hidden');
     allLogs = [];
     displayedLogs = [];
+    currentStats = {};
     currentPage = 1;
+
+    // Close all modals
+    const modals = ['detailsModal', 'totalRequestsModal', 'uniqueIPsModal', 'successRateModal', 'maliciousModal'];
+    modals.forEach(modalId => {
+      document.getElementById(modalId).classList.remove('active');
+    });
   }
 </script>
 </body>
