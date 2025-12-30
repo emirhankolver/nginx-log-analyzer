@@ -1,0 +1,14 @@
+services:
+  nginx-log-analyzer:
+    build: .
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - ACCESS_LOG_PATH=${ACCESS_LOG_PATH:-/var/log/nginx/access.log}
+      - ERROR_LOG_PATH=${ERROR_LOG_PATH:-/var/log/nginx/error.log}
+      - NGINX_LOG_FORMAT=${NGINX_LOG_FORMAT:-}
+    volumes:
+      - ${ACCESS_LOG_PATH:-/var/log/nginx/access.log}:${ACCESS_LOG_PATH:-/var/log/nginx/access.log}:ro
+      - ${ERROR_LOG_PATH:-/var/log/nginx/error.log}:${ERROR_LOG_PATH:-/var/log/nginx/error.log}:ro
+    restart: unless-stopped

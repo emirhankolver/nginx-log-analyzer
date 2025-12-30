@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Primary SEO -->
+  <title>Nginx Log Analyzer – Analyze Nginx Access Logs Locally</title>
+  <meta name="description"
+        content="Free and open-source Nginx Log Analyzer. Upload and analyze nginx access logs locally in your browser. No backend, privacy-first, fast insights." />
+  <meta name="keywords"
+        content="nginx log analyzer, nginx access log, log analysis, nginx analytics, nginx monitoring, web server logs, open source nginx tool" />
+  <meta name="author" content="Emirhan Kolver" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Canonical -->
+  <link rel="canonical" href="https://emirhankolver.github.io/nginx-log-analyzer/" />
+
+  <!-- Open Graph (Facebook, LinkedIn, Slack) -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Nginx Log Analyzer" />
+  <meta property="og:description"
+        content="Analyze nginx access logs locally. Free, open-source, privacy-first web app." />
+  <meta property="og:url" content="https://emirhankolver.github.io/nginx-log-analyzer/" />
+  <meta property="og:image" content="https://github.com/user-attachments/assets/458649db-c952-4077-9d2f-d69e0e8f7d52" />
+  <meta property="og:site_name" content="Nginx Log Analyzer" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Nginx Log Analyzer" />
+  <meta name="twitter:description" content="Analyze nginx access logs locally. No backend. Open source." />
+  <meta name="twitter:image"
+        content="https://github.com/user-attachments/assets/458649db-c952-4077-9d2f-d69e0e8f7d52" />
+  <meta name="twitter:creator" content="@emirhankolver" />
+
+  <!-- Favicon (recommended) | Full url is required. -->
+  <link rel="icon" href="https://emirhankolver.github.io/nginx-log-analyzer/favicon.png" />
+
+  <!-- Tailwind & Icons -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <style>
+      .modal {
+          display: none;
+          position: fixed;
+          z-index: 1000;
+          left: 0;
+          top: 0;
+          width: 100%;
+          height: 100%;
+          overflow: auto;
+          background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .modal.active {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+      }
+
+      .sortable:hover {
+          background-color: #f3f4f6;
+          cursor: pointer;
+      }
+
+      .stat-card {
+          cursor: pointer;
+          transition: all 0.2s ease;
+      }
+
+      .stat-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen">
+<div class="container mx-auto px-4 py-8">
+  <div class="mb-8">
+    <h1 class="text-4xl font-bold">
+      <i class="fas fa-file-lines"></i> Nginx Log Analyzer
+    </h1>
+  </div>
+  <p class="text-gray-600 mb-6">Read and analyze nginx access logs from server</p>
+
+  <!-- Hidden input for log path -->
+  <input type="hidden" id="logPath" />
+
+  <div id="loadingSpinner" class="loading gap-2 items-center text-gray-600 mb-6">
+    <div class="animate-spin">
+      <i class="fas fa-spinner text-blue-600"></i>
+    </div>
+    <span>Loading file...</span>
+  </div>
+
+  <div id="errorMessage" class="hidden fixed top-4 right-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg shadow-lg max-w-sm flex items-center justify-between gap-4 z-50">
+    <span id="errorText"></span>
+    <button onclick="document.getElementById('errorMessage').classList.add('hidden')" class="text-red-700 hover:text-red-900">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+  <div id="successMessage" class="hidden fixed top-4 right-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg shadow-lg max-w-sm flex items-center justify-between gap-4 z-50">
+    <span id="successText"></span>
+    <button onclick="document.getElementById('successMessage').classList.add('hidden')" class="text-green-700 hover:text-green-900">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+
+  <div id="results" class="hidden">
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div class="stat-card bg-white rounded-lg shadow-md p-6 border border-gray-200" onclick="showTotalRequestsModal()">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm font-medium">Total Requests</p>
+            <p id="totalRequests" class="text-3xl font-bold text-gray-800">0</p>
+          </div>
+          <div class="bg-blue-100 rounded-full p-3">
+            <i class="fas fa-globe text-blue-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card bg-white rounded-lg shadow-md p-6 border border-gray-200" onclick="showUniqueIPsModal()">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm font-medium">Unique IPs</p>
+            <p id="uniqueIPs" class="text-3xl font-bold text-gray-800">0</p>
+          </div>
+          <div class="bg-green-100 rounded-full p-3">
+            <i class="fas fa-network-wired text-green-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card bg-white rounded-lg shadow-md p-6 border border-gray-200" onclick="showSuccessRateModal()">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm font-medium">Success Rate</p>
+            <p id="successRate" class="text-3xl font-bold text-gray-800">0%</p>
+          </div>
+          <div class="bg-emerald-100 rounded-full p-3">
+            <i class="fas fa-check-circle text-emerald-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+
+      <div class="stat-card bg-white rounded-lg shadow-md p-6 border border-gray-200" onclick="showMaliciousModal()">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-gray-500 text-sm font-medium">Threats</p>
+            <p id="maliciousRequests" class="text-3xl font-bold text-gray-800">0</p>
+          </div>
+          <div class="bg-red-100 rounded-full p-3">
+            <i class="fas fa-shield-alt text-red-600 text-2xl"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+          <i class="fas fa-chart-bar text-purple-600"></i> Status Code Distribution
+        </h3>
+        <div id="statusCodes"></div>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+          <i class="fas fa-route text-indigo-600"></i> Top Endpoints
+        </h3>
+        <div id="topEndpoints"></div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-semibold text-gray-800">
+          <i class="fas fa-table text-blue-600"></i> Log Entries
+        </h3>
+        <input type="text" id="searchInput" placeholder="Search..."
+               class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full">
+          <thead class="bg-gray-50">
+          <tr>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('ip')">IP</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('timestamp')">Time</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('method')">Method</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('path')">Path</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('status')">Status</th>
+            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase sortable" onclick="sortTable('bytes')">Bytes</th>
+          </tr>
+          </thead>
+          <tbody id="logTableBody"></tbody>
+        </table>
+      </div>
+      <div id="pagination" class="mt-4 flex justify-center gap-2"></div>
+    </div>
+  </div>
+</div>
+
+<div id="detailsModal" class="modal">
+  <div class="bg-white rounded-lg shadow-2xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto border border-gray-200">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+      <h2 class="text-2xl font-bold text-gray-800"><i class="fas fa-info-circle text-blue-600"></i> Details</h2>
+      <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600 text-2xl"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="modalContent" class="p-6 text-gray-800"></div>
+  </div>
+</div>
+
+<script>
+  let allLogs = [];
+  let displayedLogs = [];
+  let currentSort = { field: null, ascending: true };
+  let currentPage = 1;
+  const itemsPerPage = 10;
+  let currentStats = {};
+
+  // Load logs automatically from environment on page load
+  window.addEventListener('DOMContentLoaded', async function() {
+    try {
+      const response = await fetch('/api/logs/list');
+      const data = await response.json();
+      
+      if (data && data.logs && data.logs.length > 0) {
+        // Auto-load the first access log found
+        const accessLog = data.logs.find(log => log.name && log.name.includes('access')) || data.logs[0];
+        if (accessLog && accessLog.path) {
+          document.getElementById('logPath').value = accessLog.path;
+          setTimeout(() => loadLog(), 500);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading logs:', error);
+    }
+  });
+
+  async function loadLog() {
+    const filePath = document.getElementById('logPath').value.trim();
+    
+    if (!filePath) {
+      showError('Please enter a file path');
+      return;
+    }
+
+    showLoading(true);
+    hideMessages();
+
+    try {
+      const response = await fetch('/api/logs/read', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ filePath })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showError(data.error || 'Failed to load file');
+        showLoading(false);
+        return;
+      }
+
+      allLogs = data.logs || [];
+
+      if (allLogs.length === 0) {
+        showError('No valid log entries found in file');
+        showLoading(false);
+        return;
+      }
+
+      displayedLogs = [...allLogs];
+      currentStats = calculateStats(allLogs);
+      displayStats(currentStats);
+      displayTable();
+      
+      document.getElementById('results').classList.remove('hidden');
+      showSuccess(`Loaded ${data.validLogs} of ${data.totalLines} log entries (Format: ${data.detectedFormat})`);
+    } catch (error) {
+      showError('Error: ' + error.message);
+    } finally {
+      showLoading(false);
+    }
+  }
+
+  function parseNginxLog(logLine) {
+    const parts = logLine.match(/^(\S+) \S+ \S+ \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)" "([^"]*)"/);
+    if (!parts) return null;
+
+    const [, ip, timestamp, request, status, bytes, referer, userAgent, xff] = parts;
+    const requestParts = request.split(' ');
+    const method = requestParts[0] || 'UNKNOWN';
+    const path = requestParts[1] || '/';
+
+    return { ip, timestamp, method, path, status: parseInt(status), bytes: parseInt(bytes), userAgent, xff, referer, fullRequest: request };
+  }
+
+  function calculateStats(logs) {
+    const stats = {
+      total: logs.length,
+      uniqueIPs: new Set(logs.map(l => l.ip)).size,
+      statusCodes: {},
+      endpoints: {},
+      ips: {},
+      methods: {},
+      threats: [],
+      totalBytes: 0,
+      successCodes: 0,
+      clientErrorCodes: 0,
+      serverErrorCodes: 0,
+      redirectCodes: 0,
+    };
+
+    logs.forEach(log => {
+      stats.statusCodes[log.status] = (stats.statusCodes[log.status] || 0) + 1;
+      stats.endpoints[log.path || 'unknown'] = (stats.endpoints[log.path || 'unknown'] || 0) + 1;
+      stats.methods[log.method] = (stats.methods[log.method] || 0) + 1;
+      stats.totalBytes += log.bytes;
+
+      if (log.status >= 200 && log.status < 300) stats.successCodes++;
+      if (log.status >= 300 && log.status < 400) stats.redirectCodes++;
+      if (log.status >= 400 && log.status < 500) stats.clientErrorCodes++;
+      if (log.status >= 500 && log.status < 600) stats.serverErrorCodes++;
+
+      stats.ips[log.ip] = (stats.ips[log.ip] || 0) + 1;
+
+      let threatType = null;
+      if (log.path && (log.path.includes('phpunit') || log.path.includes('eval') || log.path.includes('.env'))) {
+        threatType = 'PHP Exploit';
+      } else if (log.status === 403 || log.status === 401) {
+        threatType = 'Unauthorized Access';
+      }
+      
+      if (threatType) {
+        stats.threats.push({ ...log, type: threatType });
+      }
+    });
+
+    return stats;
+  }
+
+  function displayStats(stats) {
+    const successCount = Object.keys(stats.statusCodes).filter(code => code >= 200 && code < 400).reduce((sum, code) => sum + stats.statusCodes[code], 0);
+    const successRate = ((successCount / stats.total) * 100).toFixed(1);
+
+    document.getElementById('totalRequests').textContent = stats.total;
+    document.getElementById('uniqueIPs').textContent = stats.uniqueIPs;
+    document.getElementById('successRate').textContent = successRate + '%';
+    document.getElementById('maliciousRequests').textContent = stats.threats.length;
+
+    displayStatusCodes(stats.statusCodes);
+    displayTopItems(stats.endpoints, 'topEndpoints');
+  }
+
+  function displayStatusCodes(codes) {
+    const container = document.getElementById('statusCodes');
+    const sorted = Object.entries(codes).sort((a, b) => b[1] - a[1]);
+    container.innerHTML = sorted.map(([code, count]) => {
+      const color = code >= 200 && code < 300 ? 'green' : code >= 400 && code < 500 ? 'yellow' : code >= 500 ? 'red' : 'blue';
+      return `<div class="flex items-center justify-between py-2 border-b"><span class="text-${color}-600 font-bold">${code}</span><span>${count}</span></div>`;
+    }).join('');
+  }
+
+  function displayTopItems(items, containerId) {
+    const container = document.getElementById(containerId);
+    const sorted = Object.entries(items).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    container.innerHTML = sorted.map(([item, count]) => `
+      <div class="flex items-center justify-between py-2 border-b"><span>${item}</span><span>${count}</span></div>
+    `).join('');
+  }
+
+  function displayTable() {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageData = displayedLogs.slice(start, end);
+
+    const tbody = document.getElementById('logTableBody');
+    tbody.innerHTML = pageData.map((log, index) => {
+      const statusColor = log.status >= 200 && log.status < 300 ? 'green' : log.status >= 400 && log.status < 500 ? 'yellow' : log.status >= 500 ? 'red' : 'blue';
+      return `
+        <tr class="border-b hover:bg-gray-50">
+          <td class="px-4 py-3 text-sm font-mono">${log.ip}</td>
+          <td class="px-4 py-3 text-sm">${log.timestamp}</td>
+          <td class="px-4 py-3 text-sm"><span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">${log.method}</span></td>
+          <td class="px-4 py-3 text-sm truncate">${log.path}</td>
+          <td class="px-4 py-3 text-sm"><span class="bg-${statusColor}-100 text-${statusColor}-800 px-2 py-1 rounded text-xs">${log.status}</span></td>
+          <td class="px-4 py-3 text-sm">${log.bytes}</td>
+        </tr>
+      `;
+    }).join('');
+
+    displayPagination();
+  }
+
+  function displayPagination() {
+    const totalPages = Math.ceil(displayedLogs.length / itemsPerPage);
+    const pagination = document.getElementById('pagination');
+    let html = '';
+
+    if (currentPage > 1) html += `<button onclick="changePage(${currentPage - 1})" class="px-3 py-1 bg-blue-600 text-white rounded"><i class="fas fa-chevron-left"></i></button>`;
+    
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === currentPage) html += `<button class="px-3 py-1 bg-blue-600 text-white rounded">${i}</button>`;
+      else if (i === 1 || i === totalPages || (i >= currentPage - 2 && i <= currentPage + 2)) {
+        html += `<button onclick="changePage(${i})" class="px-3 py-1 bg-gray-200 rounded hover:bg-gray-300">${i}</button>`;
+      }
+    }
+    
+    if (currentPage < totalPages) html += `<button onclick="changePage(${currentPage + 1})" class="px-3 py-1 bg-blue-600 text-white rounded"><i class="fas fa-chevron-right"></i></button>`;
+    
+    pagination.innerHTML = html;
+  }
+
+  function changePage(page) {
+    currentPage = page;
+    displayTable();
+  }
+
+  function sortTable(field) {
+    if (currentSort.field === field) currentSort.ascending = !currentSort.ascending;
+    else { currentSort.field = field; currentSort.ascending = true; }
+
+    displayedLogs.sort((a, b) => {
+      let aVal = a[field];
+      let bVal = b[field];
+      if (typeof aVal === 'string') { aVal = aVal.toLowerCase(); bVal = bVal.toLowerCase(); }
+      if (aVal < bVal) return currentSort.ascending ? -1 : 1;
+      if (aVal > bVal) return currentSort.ascending ? 1 : -1;
+      return 0;
+    });
+
+    currentPage = 1;
+    displayTable();
+  }
+
+  function showTotalRequestsModal() {
+    if (!currentStats.total) return;
+    const content = document.getElementById('modalContent');
+    content.innerHTML = `<h3>Total Requests: ${currentStats.total}</h3><p>Total Data: ${(currentStats.totalBytes / (1024 * 1024)).toFixed(2)} MB</p>`;
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  function showUniqueIPsModal() {
+    const content = document.getElementById('modalContent');
+    const topIPs = Object.entries(currentStats.ips).sort((a, b) => b[1] - a[1]).slice(0, 20);
+    content.innerHTML = `<h3 class="font-bold mb-4">Top ${topIPs.length} IPs</h3>${topIPs.map(([ip, count]) => `<div class="flex justify-between py-2"><span>${ip}</span><span>${count}</span></div>`).join('')}`;
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  function showSuccessRateModal() {
+    const content = document.getElementById('modalContent');
+    const successRate = ((currentStats.successCodes / currentStats.total) * 100).toFixed(1);
+    content.innerHTML = `<h3 class="font-bold mb-4">Success Rate: ${successRate}%</h3><p>2xx: ${currentStats.successCodes}</p><p>4xx: ${currentStats.clientErrorCodes}</p><p>5xx: ${currentStats.serverErrorCodes}</p>`;
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  function showMaliciousModal() {
+    const content = document.getElementById('modalContent');
+    if (currentStats.threats.length === 0) {
+      content.innerHTML = '<p class="text-green-600">No threats detected!</p>';
+    } else {
+      content.innerHTML = `<h3 class="font-bold mb-4">Threats: ${currentStats.threats.length}</h3>${currentStats.threats.slice(0, 20).map(t => `<div class="py-2"><span class="text-red-600">${t.type}</span> - ${t.ip}</div>`).join('')}`;
+    }
+    document.getElementById('detailsModal').classList.add('active');
+  }
+
+  function closeModal() {
+    document.getElementById('detailsModal').classList.remove('active');
+  }
+
+  function clearResults() {
+    document.getElementById('logPath').value = '';
+    document.getElementById('results').classList.add('hidden');
+    allLogs = [];
+    displayedLogs = [];
+    currentStats = {};
+    currentPage = 1;
+    hideMessages();
+  }
+
+  function showLoading(show) {
+    document.getElementById('loadingSpinner').classList.toggle('active', show);
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('errorMessage');
+    document.getElementById('errorText').textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 5000);
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById('successMessage');
+    document.getElementById('successText').textContent = msg;
+    el.classList.remove('hidden');
+    setTimeout(() => el.classList.add('hidden'), 5000);
+  }
+
+  function hideMessages() {
+    document.getElementById('errorMessage').classList.add('hidden');
+    document.getElementById('successMessage').classList.add('hidden');
+  }
+
+  window.onclick = function(event) {
+    const modal = document.getElementById('detailsModal');
+    if (event.target === modal) modal.classList.remove('active');
+  };
+</script>
+</body>
+</html>
