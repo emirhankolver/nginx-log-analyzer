@@ -138,6 +138,16 @@
     <textarea id="logInput" rows="8"
               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
               placeholder="Paste your nginx logs here or upload a file..."></textarea>
+
+    <!-- CloudFlare Checkbox -->
+    <div class="mt-4 flex items-center">
+      <input type="checkbox" id="cloudflareCheckbox" class="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500">
+      <label for="cloudflareCheckbox" class="ml-2 text-sm font-medium text-gray-700">
+        <i class="fas fa-cloud text-blue-500"></i> CloudFlare Mode (Use X-Forwarded-For as client IP)
+      </label>
+      <span class="ml-2 text-xs text-gray-500">When enabled, the last IP in X-Forwarded-For will be used as the client IP</span>
+    </div>
+
     <div class="mt-4 flex gap-2">
       <button onclick="analyzeLog()"
               class="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition">
@@ -408,7 +418,7 @@
   const itemsPerPage = 10;
   let currentStats = {};
 
-  function parseNginxLog(logLine) {
+  function parseNginxLog(logLine, useCloudflare = false) {
     const parts = logLine.match(/^(\S+) \S+ \S+ \[([^\]]+)\] "([^"]*)" (\d+) (\d+) "([^"]*)" "([^"]*)" "([^"]*)"/);
     if (!parts) return null;
 
@@ -417,17 +427,29 @@
     const method = requestParts[0] || 'UNKNOWN';
     const path = requestParts[1] || '/';
 
+    // Determine the client IP based on Cloudflare mode
+    let clientIp = ip;
+    if (useCloudflare && xff && xff !== '-') {
+      // X-Forwarded-For can contain multiple IPs (client, proxy1, proxy2)
+      // The client IP is typically the first one, but in some setups it might be the last
+      // We'll use the last IP as the client IP (common with Cloudflare)
+      const xffIps = xff.split(',').map(s => s.trim());
+      clientIp = xffIps[xffIps.length - 1];
+    }
+
     return {
-      ip,
+      ip: clientIp,
+      originalIp: ip, // Keep original for reference
+      xff: xff, // Keep X-Forwarded-For for reference
       timestamp,
       method,
       path,
       status: parseInt(status),
       bytes: parseInt(bytes),
       userAgent,
-      xff,
       referer,
       fullRequest: request,
+      usedCloudflare: useCloudflare // Flag to indicate if Cloudflare mode was used
     };
   }
 
@@ -438,8 +460,9 @@
       return;
     }
 
+    const useCloudflare = document.getElementById('cloudflareCheckbox').checked;
     const lines = input.trim().split('\n');
-    allLogs = lines.map(parseNginxLog).filter(log => log !== null);
+    allLogs = lines.map(line => parseNginxLog(line, useCloudflare)).filter(log => log !== null);
 
     if (allLogs.length === 0) {
       alert('No valid log entries found!');
@@ -472,6 +495,10 @@
       redirectCodes: 0,
       ipDetails: {},
       maliciousDetails: {},
+      cloudflareInfo: {
+        enabled: logs.length > 0 ? logs[0].usedCloudflare : false,
+        xffCount: logs.filter(l => l.xff && l.xff !== '-').length
+      }
     };
 
     logs.forEach(log => {
@@ -494,6 +521,7 @@
           methods: new Set(),
           paths: new Set(),
           statusCodes: new Set(),
+          originalIps: new Set(), // Track original IPs for reference
         };
       }
       stats.ipDetails[log.ip].count++;
@@ -501,6 +529,7 @@
       stats.ipDetails[log.ip].methods.add(log.method);
       stats.ipDetails[log.ip].paths.add(log.path);
       stats.ipDetails[log.ip].statusCodes.add(log.status);
+      stats.ipDetails[log.ip].originalIps.add(log.originalIp);
 
       // Track IP counts
       stats.ips[log.ip] = (stats.ips[log.ip] || 0) + 1;
@@ -611,6 +640,14 @@
           </div>
         </div>
 
+        ${stats.cloudflareInfo.enabled ? `
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <p class="text-sm text-blue-800">
+            <i class="fas fa-cloud"></i> <strong>CloudFlare Mode Active:</strong> ${stats.cloudflareInfo.xffCount} of ${stats.total} requests had X-Forwarded-For headers.
+          </p>
+        </div>
+        ` : ''}
+
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h3 class="text-lg font-semibold text-gray-800 mb-4">
@@ -714,6 +751,14 @@
             <p class="text-3xl font-bold text-purple-600">${(stats.total / stats.uniqueIPs).toFixed(1)}</p>
           </div>
         </div>
+
+        ${stats.cloudflareInfo.enabled ? `
+        <div class="bg-blue-50 p-4 rounded-lg">
+          <p class="text-sm text-blue-800">
+            <i class="fas fa-cloud"></i> <strong>CloudFlare Mode Active:</strong> IP addresses shown are the real client IPs from X-Forwarded-For headers.
+          </p>
+        </div>
+        ` : ''}
 
         <div>
           <h3 class="text-lg font-semibold text-gray-800 mb-4">
@@ -1109,6 +1154,11 @@
           <h3 class="text-lg font-bold text-gray-800 mb-2">
             <i class="fas fa-user-secret"></i> IP Address Analysis: ${ip}
           </h3>
+          ${stats.cloudflareInfo.enabled ? `
+          <div class="mb-4 p-2 bg-blue-50 rounded-lg text-sm">
+            <i class="fas fa-cloud text-blue-500"></i> This IP is from X-Forwarded-For header (CloudFlare Mode)
+          </div>
+          ` : ''}
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
             <div class="bg-blue-50 p-3 rounded">
               <p class="text-xs text-gray-600">Total Requests</p>
@@ -1252,11 +1302,14 @@
       const statusColor = log.status >= 200 && log.status < 300 ? 'green' :
         log.status >= 400 && log.status < 500 ? 'yellow' :
           log.status >= 500 ? 'red' : 'blue';
+      const ipDisplay = log.xff && log.xff !== '-' && log.usedCloudflare ?
+        `<span class="text-xs text-blue-500 ml-1" title="X-Forwarded-For: ${log.xff}">(CF)</span>` : '';
       return `
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                         <td class="px-4 py-3 text-sm font-mono text-gray-700">
                         <a href="https://ipinfo.io/${log.ip}" target="_blank" rel="noopener noreferrer"
                                class="text-blue-600 hover:text-blue-800 hover:underline">${log.ip}</a>
+                               ${ipDisplay}
                         </td>
                         <td class="px-4 py-3 text-sm text-gray-600">${log.timestamp}</td>
                         <td class="px-4 py-3 text-sm">
@@ -1348,7 +1401,8 @@
         log.path.toLowerCase().includes(searchTerm) ||
         log.method.toLowerCase().includes(searchTerm) ||
         log.userAgent.toLowerCase().includes(searchTerm) ||
-        log.status.toString().includes(searchTerm),
+        log.status.toString().includes(searchTerm) ||
+        (log.xff && log.xff.toLowerCase().includes(searchTerm))
       );
     }
 
@@ -1379,6 +1433,7 @@
                                 <p class="text-sm font-mono text-gray-800 bg-gray-50 p-2 rounded">
                                 <a href="https://ipinfo.io/${log.ip}" target="_blank" rel="noopener noreferrer"
                                class="text-blue-600 hover:text-blue-800 hover:underline">${log.ip}</a>
+                               ${log.usedCloudflare ? `<span class="ml-2 text-xs text-blue-500">(from X-Forwarded-For)</span>` : ''}
                                </p>
                             </div>
                             <div>
@@ -1425,7 +1480,7 @@
                             </div>
                             <div>
                                 <label class="text-xs text-gray-500 font-medium">X-Forwarded-For</label>
-                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded">${log.xff}</p>
+                                <p class="text-sm text-gray-800 bg-gray-50 p-2 rounded">${log.xff || '-'}</p>
                             </div>
                         </div>
                     </div>
